@@ -58,6 +58,75 @@ void printList(void) {
 
 void *malloc (size_t size) {
 	// TODO: implement me!
+	//malloc with first-fit implementation
+
+	if(head == NULL) {
+		//Init heap and memory-control structure
+		memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); 	//map memory of size $SIZE with permissions to read and write granted and a private and anonymous map type. 
+		if(memory == MAP_FAILED) {
+			perror("mmap");
+			exit(EXIT_FAILURE);
+		}
+
+		//init control-structure
+		head = (struct mblock *)memory;
+		head->next = NULL;
+		head->size = SIZE - sizeof(struct mblock);
+	}
+
+	struct mblock *currentBlock = head;
+
+	//check if first block in list is sufficient
+	if(currentBlock->size > size) {
+		//create and init new free block with remaining memory as size parameter
+		struct mblock *newBlock = NULL;
+		newBlock->next = currentBlock->next;
+		newBlock->size = currentBlock->size - size - sizeof(struct mblock);		//set remaining size to difference between size of previous block and allocated size plus size of one mblock
+		
+		//TODO: get newBlock at memory location after currentBlock thats now used
+		currentBlock->memory[size] = newBlock; 
+
+		//setting new free block as head
+		head = newBlock;
+
+		//returning start of memory of current block after marking it as occupied and updating its size
+		currentBlock->size = size;
+		currentBlock->next = MAGIC;
+		return &currentBlock->memory;
+	}else if (currentBlock->size == size){
+		head = currentBlock->next;	//remove current block from list
+		currentBlock->next = MAGIC;
+		return &currentBlock->memory;
+	}
+	
+	//if size was not sufficient, walk through list an search for big enough block
+	struct mblock *previousBlock = NULL;
+
+	while(currentBlock->next != NULL) {
+		previousBlock = currentBlock;
+		currentBlock = currentBlock->next;
+
+		if(currentBlock->size > size) {
+			//create and init new free block with remaining memory as size parameter
+			struct mblock *newBlock = NULL;
+			newBlock->next = currentBlock->next;
+			newBlock->size = currentBlock->size - size - sizeof(struct mblock);		//set remaining size to difference between size of previous block and allocated size plus size of one mblock
+			currentBlock->memory[size] = (char)newBlock;
+
+			//setting new free block as head
+			previousBlock->next = newBlock;
+
+			//returning start of memory of current block after marking it as occupied and updating its size
+			currentBlock->size = size;
+			currentBlock->next = MAGIC;
+			return &currentBlock->memory;
+		}else if (currentBlock->size == size){
+			previousBlock->next = currentBlock->next;	//remove current block from list
+			currentBlock->next = MAGIC;
+			return &currentBlock->memory;
+		}
+	}
+	//if function still has not returned here, no block with sufficient space was found -> return NULL pointer
 	return NULL;
 }
 
@@ -74,3 +143,9 @@ void *calloc (size_t nmemb, size_t size) {
 	// TODO: implement me!
 	return NULL;
 }
+
+
+/*
+newBlock->size = (SIZE + &head) - (&newBlock + sizeof(struct mblock));	//sets remaining size to the difference between the address of the start of the structure (address of head) with an offset of $SIZE (representing the complete address space mapped by mmap) and the address of the new mblock with an offset of its size. The resulting integer is a representation of the total remaining space in the mapped memory area
+
+*/
