@@ -60,12 +60,12 @@ void *malloc (size_t size) {
 	// TODO: implement me!
 	//malloc with first-fit implementation
 
+	//nochmal anschauen @memory
 	if(head == NULL) {
 		//Init heap and memory-control structure
 		memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0); 	//map memory of size $SIZE with permissions to read and write granted and a private and anonymous map type. 
 		if(memory == MAP_FAILED) {
-			perror("mmap");
-			exit(EXIT_FAILURE);
+			return NULL;
 		}
 
 		//init control-structure
@@ -77,25 +77,23 @@ void *malloc (size_t size) {
 	struct mblock *currentBlock = head;
 
 	//check if first block in list is sufficient
-	if(currentBlock->size > size) {
+	if(currentBlock->size > (size + sizeof(struct mblock))) {
 		//create and init new free block with remaining memory as size parameter
-		struct mblock *newBlock = (struct mblock *) &(currentBlock->memory[size]); 
+		struct mblock *newBlock = (struct mblock *) &(currentBlock->memory[size]);
 		newBlock->next = currentBlock->next;
 		newBlock->size = currentBlock->size - size - sizeof(struct mblock);		//set remaining size to difference between size of previous block and allocated size plus size of one mblock
 		
-		//TODO: get newBlock at memory location after currentBlock thats now used
-
 		//setting new free block as head
 		head = newBlock;
 
 		//returning start of memory of current block after marking it as occupied and updating its size
 		currentBlock->size = size;
 		currentBlock->next = MAGIC;
-		return &currentBlock->memory;
+		return currentBlock->memory;
 	}else if (currentBlock->size == size){
 		head = currentBlock->next;	//remove current block from list
 		currentBlock->next = MAGIC;
-		return &currentBlock->memory;
+		return currentBlock->memory;
 	}
 	
 	//if size was not sufficient, walk through list an search for big enough block
@@ -105,7 +103,7 @@ void *malloc (size_t size) {
 		previousBlock = currentBlock;
 		currentBlock = currentBlock->next;
 
-		if(currentBlock->size > size) {
+		if(currentBlock->size > (size + sizeof(struct mblock))) {
 			//create and init new free block with remaining memory as size parameter
 			struct mblock *newBlock = (struct mblock *) &(currentBlock->memory[size]);
 			newBlock->next = currentBlock->next;
@@ -117,11 +115,11 @@ void *malloc (size_t size) {
 			//returning start of memory of current block after marking it as occupied and updating its size
 			currentBlock->size = size;
 			currentBlock->next = MAGIC;
-			return &currentBlock->memory;
+			return currentBlock->memory;
 		}else if (currentBlock->size == size){
 			previousBlock->next = currentBlock->next;	//remove current block from list
 			currentBlock->next = MAGIC;
-			return &currentBlock->memory;
+			return currentBlock->memory;
 		}
 	}
 	//if function still has not returned here, no block with sufficient space was found -> return NULL pointer
@@ -135,7 +133,7 @@ void free (void *ptr) {
 		return;
 	}
 
-	struct mblock *mbp = ((struct mblock *) ptr) - sizeof(struct mblock);
+	struct mblock *mbp = ((struct mblock *) ptr) - 1;	//"1" represents one mblock
 	
 	//check if block is really allocated
 	if(mbp->next != MAGIC) {
@@ -150,6 +148,7 @@ void free (void *ptr) {
 
 void *realloc (void *ptr, size_t size) {
 	// TODO: implement me!
+	malloc()
 	return NULL;
 }
 

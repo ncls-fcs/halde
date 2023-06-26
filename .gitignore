@@ -1,3 +1,5 @@
 *.o
 *.gch
 halde
+test
+test-ref
