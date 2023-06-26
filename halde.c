@@ -79,12 +79,11 @@ void *malloc (size_t size) {
 	//check if first block in list is sufficient
 	if(currentBlock->size > size) {
 		//create and init new free block with remaining memory as size parameter
-		struct mblock *newBlock = NULL;
+		struct mblock *newBlock = (struct mblock *) &(currentBlock->memory[size]); 
 		newBlock->next = currentBlock->next;
 		newBlock->size = currentBlock->size - size - sizeof(struct mblock);		//set remaining size to difference between size of previous block and allocated size plus size of one mblock
 		
 		//TODO: get newBlock at memory location after currentBlock thats now used
-		currentBlock->memory[size] = newBlock; 
 
 		//setting new free block as head
 		head = newBlock;
@@ -108,10 +107,9 @@ void *malloc (size_t size) {
 
 		if(currentBlock->size > size) {
 			//create and init new free block with remaining memory as size parameter
-			struct mblock *newBlock = NULL;
+			struct mblock *newBlock = (struct mblock *) &(currentBlock->memory[size]);
 			newBlock->next = currentBlock->next;
 			newBlock->size = currentBlock->size - size - sizeof(struct mblock);		//set remaining size to difference between size of previous block and allocated size plus size of one mblock
-			currentBlock->memory[size] = (char)newBlock;
 
 			//setting new free block as head
 			previousBlock->next = newBlock;
@@ -127,11 +125,27 @@ void *malloc (size_t size) {
 		}
 	}
 	//if function still has not returned here, no block with sufficient space was found -> return NULL pointer
+	errno = ENOMEM;
 	return NULL;
 }
 
 void free (void *ptr) {
-	// TODO: implement me!
+	if(ptr == NULL) {
+		//NULL pointer was given
+		return;
+	}
+
+	struct mblock *mbp = ((struct mblock *) ptr) - sizeof(struct mblock);
+	
+	//check if block is really allocated
+	if(mbp->next != MAGIC) {
+		//error handling, block was not allocated
+		abort();
+	}
+
+	//reintegrate now free block into list
+	mbp->next = head;
+	head = mbp;
 }
 
 void *realloc (void *ptr, size_t size) {
