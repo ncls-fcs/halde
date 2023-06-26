@@ -148,13 +148,36 @@ void free (void *ptr) {
 
 void *realloc (void *ptr, size_t size) {
 	// TODO: implement me!
-	malloc()
-	return NULL;
+	if(ptr == NULL) {			//edge case if ptr is NULL
+		return malloc(size);
+	}
+	if(size == 0 && ptr != NULL) {	//edge case creates minimum sized block and frees original memory
+		free(ptr);
+		return malloc(0);
+	}
+
+	char *newptr = malloc(size);
+
+	struct mblock *ptr_mblock = (struct mblock *) ptr;		//cast ptr to struct to read its size
+	if(size < ptr_mblock->size){				//check if new location is bigger or smaller than old one
+		memcpy(newptr, ptr, size);				//copy at most new size bytes from old memory location to new if new location is smaller than old one
+	}else{
+		memcpy(newptr, ptr, ptr_mblock->size);	//copy every byte in original memory area
+	}
+	free(ptr);		//free old ptr
+	
+	return newptr;
 }
 
 void *calloc (size_t nmemb, size_t size) {
-	// TODO: implement me!
-	return NULL;
+	if((nmemb * size) / size != nmemb) {				//check if integer overflow would occur:
+		return NULL;
+	}
+	char *ptr = malloc(nmemb * size);					//allocate memory
+	for(int i = 0; i < (nmemb * size)/8; i+=8) {		//zero allocated memory bytewise
+		ptr[i] = 0x0;
+	}
+	return ptr;
 }
 
 

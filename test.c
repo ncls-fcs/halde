@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     free(m4);
     printList();
 
-    /* char *m5 = calloc(20, sizeof(int));
+    char *m5 = calloc(20, sizeof(int));
     printList();
 
     char *m6 = malloc(256);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     printList();
 
     free(m10);
-    printList(); */
+    printList(); 
 
     exit(EXIT_SUCCESS);
 }
